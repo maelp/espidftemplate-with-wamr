@@ -27,7 +27,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   gcc-multilib \
   clang \
   vim \
-  && rm -rf /var/lib/apt/lists/*
+  pkg-config \
+  libudev-dev libusb-1.0-0-dev libftdi1-dev
 
 # Create a non-root user
 RUN useradd -m -s /bin/bash $USERNAME && \
@@ -38,8 +39,9 @@ WORKDIR $HOME
 
 # Install Rust and required cargo tools
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
-  echo "export PATH=\"$HOME/.cargo/bin:\$PATH\"" >> $HOME/.bashrc && \
-  . "$HOME/.cargo/env" && \
+  echo "export PATH=\"$HOME/.cargo/bin:\$PATH\"" >> $HOME/.bashrc
+
+RUN . "$HOME/.cargo/env" && \
   cargo install cargo-generate ldproxy espup espflash cargo-espflash
 
 # Install Espressif toolchain with espup
@@ -49,7 +51,8 @@ RUN . "$HOME/.cargo/env" && \
 
 # Clone and install ESP-IDF (for C++ build tools)
 RUN mkdir -p $HOME/esp && cd $HOME/esp && git clone -b v5.4 --recursive https://github.com/espressif/esp-idf.git && \
-  cd $HOME/esp/esp-idf && ./install.sh
+  cd $HOME/esp/esp-idf && ./install.sh && \
+  echo "source $HOME/esp/esp-idf/export.sh" >> $HOME/.bashrc
 
 # Set default shell to bash
 CMD ["/bin/bash"]
