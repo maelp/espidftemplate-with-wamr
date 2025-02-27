@@ -20,19 +20,8 @@ fn main() -> Result<(), RuntimeError> {
 
     info!("----- Starting WAMR ESP32 example");
     
-    // Create and run a dedicated pthread-compatible thread
-    let thread_handle = std::thread::Builder::new()
-        .name("wamr-thread".to_string())
-        .stack_size(10 * 1024) // 10KB stack
-        .spawn(|| {
-            if let Err(e) = run_wasm() {
-                error!("WASM execution failed: {:?}", e);
-            }
-        })
-        .expect("Failed to spawn thread");
-    
-    // Wait for the thread to complete
-    thread_handle.join().expect("Thread panicked");
+    // Run directly in the main task to avoid threading issues
+    run_wasm()?;
     
     info!("WASM execution completed");
     Ok(())
@@ -40,7 +29,10 @@ fn main() -> Result<(), RuntimeError> {
 
 fn run_wasm() -> Result<(), RuntimeError> {
     info!("Configuring WAMR runtime");
+    
+    // Configure runtime with standard features
     let runtime = Runtime::builder()
+        .run_as_interpreter() // Use interpreter mode for stability
         .use_system_allocator()
         .register_host_function("extra", extra as *mut c_void)
         .build()?;
@@ -67,23 +59,42 @@ fn run_wasm() -> Result<(), RuntimeError> {
     
     let params: Vec<WasmValue> = vec![WasmValue::I32(9), WasmValue::I32(27)];
 
-    // Try with a small memory size first
-    info!("Attempting to create instance with 4kb bytes memory");
-    let instance = match Instance::new(&runtime, &module, 1024 * 8) {
+    // Increase stack size to avoid stack overflow
+    info!("Attempting to create instance with 32kb memory");
+    let instance = match Instance::new_with_args(
+        &runtime,
+        &module,
+        32 * 1024,   // 32KB stack 
+        32 * 1024    // 32KB heap
+    ) {
         Ok(inst) => {
-            info!("Successfully created instance with 4kb bytes memory");
+            info!("Successfully created instance with 32kb memory");
             inst
         },
         Err(e) => {
-            error!("Failed to create instance with 4kb bytes: {:?}", e);
+            error!("Failed to create instance: {:?}", e);
             return Err(e);
         }
     };
     
     info!("Successfully instantiated WASM module");
-    let function = Function::find_export_func(&instance, "add")?;
+    let function = match Function::find_export_func(&instance, "add") {
+        Ok(f) => f,
+        Err(e) => {
+            error!("Failed to find 'add' function: {:?}", e);
+            return Err(e);
+        }
+    };
     
-    let result = function.call(&instance, &params)?;
+    info!("Found 'add' function, calling it now");
+    let result = match function.call(&instance, &params) {
+        Ok(r) => r,
+        Err(e) => {
+            error!("Function call failed: {:?}", e);
+            return Err(e);
+        }
+    };
+    
     log::info!("----- Result: {:?}", result);
 
     Ok(())
