@@ -19,7 +19,26 @@ fn main() -> Result<(), RuntimeError> {
     EspLogger::initialize_default();
 
     info!("----- Starting WAMR ESP32 example");
+    
+    // Create and run a dedicated pthread-compatible thread
+    let thread_handle = std::thread::Builder::new()
+        .name("wamr-thread".to_string())
+        .stack_size(10 * 1024) // 10KB stack
+        .spawn(|| {
+            if let Err(e) = run_wasm() {
+                error!("WASM execution failed: {:?}", e);
+            }
+        })
+        .expect("Failed to spawn thread");
+    
+    // Wait for the thread to complete
+    thread_handle.join().expect("Thread panicked");
+    
+    info!("WASM execution completed");
+    Ok(())
+}
 
+fn run_wasm() -> Result<(), RuntimeError> {
     info!("Configuring WAMR runtime");
     let runtime = Runtime::builder()
         .use_system_allocator()
