@@ -12,3 +12,7 @@ build-std = ["std", "panic_abort"]
 [env]
 CARGO_FEATURE_ESP_IDF = "1" 
 WAMR_BUILD_TARGET = "XTENSA"
+WAMR_BUILD_MULTI_MODULE = "1"
+WAMR_BUILD_INTERP = "1"
+WAMR_BUILD_AOT = "1"
+WAMR_BUILD_JIT = "0"

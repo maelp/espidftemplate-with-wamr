@@ -19,14 +19,17 @@ fn main() -> Result<(), RuntimeError> {
     EspLogger::initialize_default();
 
     info!("----- Starting WAMR ESP32 example");
-    
-    // Run directly in the main task to avoid threading issues
+
+    // Use the simpler direct approach without threading
     run_wasm()?;
     
     info!("WASM execution completed");
     Ok(())
 }
 
+// Let's remove unused code completely and focus on the core functionality
+
+// Actually run the WASM module
 fn run_wasm() -> Result<(), RuntimeError> {
     info!("Configuring WAMR runtime");
     
@@ -57,18 +60,15 @@ fn run_wasm() -> Result<(), RuntimeError> {
     let free_heap = unsafe { sys::esp_get_free_heap_size() };
     info!("Free heap before WASM instantiation: {} bytes", free_heap);
     
-    let params: Vec<WasmValue> = vec![WasmValue::I32(9), WasmValue::I32(27)];
-
-    // Increase stack size to avoid stack overflow
-    info!("Attempting to create instance with 32kb memory");
-    let instance = match Instance::new_with_args(
+    // Increase memory sizes
+    info!("Attempting to create instance with 16kb memory");
+    let instance = match Instance::new(
         &runtime,
         &module,
-        32 * 1024,   // 32KB stack 
-        32 * 1024    // 32KB heap
+        4 * 1024
     ) {
         Ok(inst) => {
-            info!("Successfully created instance with 32kb memory");
+            info!("Successfully created instance");
             inst
         },
         Err(e) => {
@@ -78,6 +78,7 @@ fn run_wasm() -> Result<(), RuntimeError> {
     };
     
     info!("Successfully instantiated WASM module");
+    
     let function = match Function::find_export_func(&instance, "add") {
         Ok(f) => f,
         Err(e) => {
@@ -86,16 +87,20 @@ fn run_wasm() -> Result<(), RuntimeError> {
         }
     };
     
-    info!("Found 'add' function, calling it now");
-    let result = match function.call(&instance, &params) {
-        Ok(r) => r,
+    info!("Found 'add' function, executing simple test");
+    
+    // Create parameters for the function call
+    let params: Vec<WasmValue> = vec![WasmValue::I32(5), WasmValue::I32(7)];
+    
+    match function.call(&instance, &params) {
+        Ok(result) => {
+            info!("WASM function result: {:?}", result);
+        },
         Err(e) => {
             error!("Function call failed: {:?}", e);
             return Err(e);
         }
-    };
+    }
     
-    log::info!("----- Result: {:?}", result);
-
     Ok(())
 }

@@ -1,27 +1,9 @@
 # Rust often needs a bit of an extra main task stack size compared to C (the default is 3K)
-CONFIG_ESP_MAIN_TASK_STACK_SIZE=16000
-
-# Increase heap size for WASM runtime
-CONFIG_ESP32S3_SPIRAM_SUPPORT=y
-CONFIG_SPIRAM_USE=y
-CONFIG_SPIRAM_MODE_OCT=y
-CONFIG_SPIRAM_TYPE_AUTO=y
-CONFIG_SPIRAM_SIZE=-1
-CONFIG_SPIRAM_SPEED_80M=y
-CONFIG_SPIRAM_MEMTEST=y
-CONFIG_SPIRAM_CACHE_WORKAROUND=y
-CONFIG_SPIRAM_FETCH_INSTRUCTIONS=y
-CONFIG_SPIRAM_RODATA=y
-CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY=y
-
-# Use dynamic allocation for WebAssembly runtime
-CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE=n
-CONFIG_ESP_SYSTEM_MEMPROT_FEATURE=n
-CONFIG_ESP_SYSTEM_MEMPROT_FEATURE_LOCK=n
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=32000
 
 # Use this to set FreeRTOS kernel tick frequency to 1000 Hz (100 Hz by default).
 # This allows to use 1 ms granularity for thread sleeps (10 ms by default).
-CONFIG_FREERTOS_HZ=1000
+#CONFIG_FREERTOS_HZ=1000
 
 # Workaround for https://github.com/espressif/esp-idf/issues/7631
 #CONFIG_MBEDTLS_CERTIFICATE_BUNDLE=n
