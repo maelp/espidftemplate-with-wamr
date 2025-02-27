@@ -34,3 +34,4 @@ wamr-rust-sdk = { git = "https://github.com/bytecodealliance/wamr-rust-sdk", rev
 
 [build-dependencies]
 embuild = "0.33"
+
