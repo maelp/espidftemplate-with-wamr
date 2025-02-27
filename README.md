@@ -30,15 +30,12 @@ cd esp-idf && ./install.sh esp32s3
 
 Before building the main application, you should build the WASM plugins:
 
-```sh
-# Make the script executable if needed
-chmod +x build_plugins.sh
-
-# Build the plugins
+```sh# Build the plugins
 ./build_plugins.sh
 ```
 
 This will build:
+
 1. A Rust plugin (compiled to WebAssembly)
 2. An AssemblyScript plugin (compiled to WebAssembly)
 
@@ -75,6 +72,7 @@ You can create custom plugins in various languages that compile to WebAssembly:
 3. **C/C++ Plugins**: Use Emscripten or other WASM compilers
 
 Plugins need to:
+
 1. Export functions (like `print_message` and `add` in our examples)
 2. Import host functions when needed (like `log_message`)
 
