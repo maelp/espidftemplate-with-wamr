@@ -18,6 +18,6 @@ fn main() {
     // Placeholder for plugin copying logic
     // This is a reminder that we'll embed the plugins after they're built
     
-    println!("cargo:rerun-if-changed=src/plugins/rust/src/lib.rs");
-    println!("cargo:rerun-if-changed=src/plugins/assemblyscript/assembly/index.ts");
+    println!("cargo:rerun-if-changed=plugins/rust/src/lib.rs");
+    println!("cargo:rerun-if-changed=plugins/assemblyscript/assembly/index.ts");
 }
