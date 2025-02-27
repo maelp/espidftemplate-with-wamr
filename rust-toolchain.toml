@@ -1,2 +1,2 @@
 [toolchain]
-channel = "esp32s3"
+channel = "esp"
