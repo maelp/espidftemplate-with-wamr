@@ -15,7 +15,7 @@ const RUST_PLUGIN: &[u8] = include_bytes!("../resources/plugins/rust_plugin.wasm
 
 fn main() -> Result<(), RuntimeError> {
     // Initialize ESP-IDF
-    sys::link_patches();
+    // sys::link_patches();
     EspLogger::initialize_default();
     
     info!("----- Starting WAMR ESP32 example");

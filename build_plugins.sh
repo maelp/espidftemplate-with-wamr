@@ -18,21 +18,21 @@ RUSTFLAGS="-C opt-level=z -C lto=true -C codegen-units=1 -C panic=abort" cargo b
 # fi
 cd ../..
 
-echo "Building AssemblyScript plugin..."
-cd plugins/assemblyscript
-npm install
-npm run build
-cd ../..
+# echo "Building AssemblyScript plugin..."
+# cd plugins/assemblyscript
+# npm install
+# npm run build
+# cd ../..
 
-echo "Building C plugin..."
-# Check if emcc (Emscripten compiler) is available
-# if command -v emcc &> /dev/null; then
-    cd plugins/c
-    make
-    cd ../..
-    echo "C plugin built successfully"
-# else
-#     echo "Warning: emcc (Emscripten compiler) not found, skipping C plugin build"
-# fi
+# echo "Building C plugin..."
+# # Check if emcc (Emscripten compiler) is available
+# # if command -v emcc &> /dev/null; then
+#     cd plugins/c
+#     make
+#     cd ../..
+#     echo "C plugin built successfully"
+# # else
+# #     echo "Warning: emcc (Emscripten compiler) not found, skipping C plugin build"
+# # fi
 
-echo "Plugins built successfully!"
+# echo "Plugins built successfully!"
