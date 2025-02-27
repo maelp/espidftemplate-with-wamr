@@ -1,0 +1,12 @@
+{
+  "name": "as-plugin",
+  "version": "1.0.0",
+  "description": "AssemblyScript WASM plugin example",
+  "main": "index.js",
+  "scripts": {
+    "build": "asc assembly/index.ts --target release --outFile ../../../resources/plugins/as-plugin.wasm --importMemory --noExportMemory"
+  },
+  "dependencies": {
+    "assemblyscript": "^0.27.23"
+  }
+}
