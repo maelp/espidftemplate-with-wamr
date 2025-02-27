@@ -61,11 +61,11 @@ fn run_wasm() -> Result<(), RuntimeError> {
     info!("Free heap before WASM instantiation: {} bytes", free_heap);
     
     // Increase memory sizes
-    info!("Attempting to create instance with 16kb memory");
+    info!("Attempting to create instance");
     let instance = match Instance::new(
         &runtime,
         &module,
-        4 * 1024
+        2 * 1024
     ) {
         Ok(inst) => {
             info!("Successfully created instance");
