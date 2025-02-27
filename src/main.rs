@@ -17,7 +17,6 @@ const RUST_PLUGIN: &[u8] = include_bytes!("../resources/plugins/rust_plugin.wasm
 
 fn main() -> Result<(), RuntimeError> {
     // Initialize ESP-IDF
-    sys::link_patches(); // This is crucial for ESP-IDF integration
     EspLogger::initialize_default();
 
     info!("----- Starting WAMR ESP32 example");
@@ -81,7 +80,7 @@ fn run_wasm() -> Result<Vec<WasmValue>, RuntimeError> {
     let runtime = Runtime::builder()
         .run_as_interpreter() // Use interpreter mode, if I remove it it fails with another error somehow(?) -- ideally we would want to use AOT compiled code
         .use_system_allocator()
-        .register_host_function("extra", extra as *mut c_void)
+        .register_host_function("extra", extra as *mut c_void) // similarly, if I remove this, it fails with another error somehow(?)
         .build()?;
 
     info!("----- WAMR runtime built successfully");
