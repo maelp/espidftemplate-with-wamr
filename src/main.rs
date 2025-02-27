@@ -3,6 +3,8 @@ use wamr_rust_sdk::{
     value::WasmValue, RuntimeError
 };
 use std::ffi::c_void;
+use esp_idf_svc::{sys, log::EspLogger};
+use log::*;
 
 extern "C" fn extra() -> i32 {
     100
@@ -12,7 +14,11 @@ extern "C" fn extra() -> i32 {
 const RUST_PLUGIN: &[u8] = include_bytes!("../resources/plugins/rust_plugin.wasm");
 
 fn main() -> Result<(), RuntimeError> {
-    log::info!("----- Starting WAMR ESP32 example");
+    // Initialize ESP-IDF
+    sys::link_patches();
+    EspLogger::initialize_default();
+    
+    info!("----- Starting WAMR ESP32 example");
 
     let runtime = Runtime::builder()
         .use_system_allocator()
