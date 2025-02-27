@@ -4,7 +4,7 @@
   "description": "AssemblyScript WASM plugin example",
   "main": "index.js",
   "scripts": {
-    "build": "asc assembly/index.ts --target release --outFile ../../../resources/plugins/as-plugin.wasm --importMemory --noExportMemory"
+    "build": "asc assembly/index.ts --target release --outFile ../../../resources/plugins/as-plugin.wasm --importMemory --noExportMemory --optimize --optimizeLevel 3 --shrinkLevel 2 --converge"
   },
   "dependencies": {
     "assemblyscript": "^0.27.23"

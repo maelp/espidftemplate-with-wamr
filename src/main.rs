@@ -1,56 +1,92 @@
-use std::ffi::{c_void, CStr, CString};
 use wamr_rust_sdk::{
     function::Function, instance::Instance, module::Module, runtime::Runtime, value::WasmValue,
     RuntimeError,
 };
 
-// Host function for WASM plugins to log messages
+// We've simplified our plugins to not need any host functions, 
+// but keeping this commented for reference
+/*
 extern "C" fn log_message(message_ptr: *const i8) -> i32 {
     unsafe {
-        if let Ok(c_str) = CStr::from_ptr(message_ptr).to_str() {
-            log::info!("[WASM] {}", c_str);
-        } else {
-            log::error!("[WASM] Invalid UTF-8 string");
+        if message_ptr.is_null() {
+            log::error!("[WASM] Null message pointer");
+            return -1;
+        }
+        
+        // Simple C string handling - find null terminator and convert to str
+        let mut len = 0;
+        while *message_ptr.add(len) != 0 && len < 100 {
+            len += 1;
+        }
+        
+        let slice = std::slice::from_raw_parts(message_ptr as *const u8, len);
+        match std::str::from_utf8(slice) {
+            Ok(s) => log::info!("[WASM] {}", s),
+            Err(_) => log::error!("[WASM] Invalid UTF-8 string"),
         }
     }
     0
 }
+*/
 
-// We need to embed the WASM binaries directly in the binary for ESP32
+// Use the Rust-compiled plugin
 const RUST_PLUGIN: &[u8] = include_bytes!("../resources/plugins/rust_plugin.wasm");
-const AS_PLUGIN: &[u8] = include_bytes!("../resources/plugins/as-plugin.wasm");
-// The C plugin is optional - it will only be included if it exists
-#[cfg(feature = "c_plugin")]
-const C_PLUGIN: &[u8] = include_bytes!("../resources/plugins/c-plugin.wasm");
 
 fn load_and_run_wasm_plugin(runtime: &Runtime, name: &str, wasm_bytes: &[u8]) -> Result<(), RuntimeError> {
-    log::info!("Loading {} WASM plugin", name);
+    log::info!("Loading {} WASM plugin ({} bytes)", name, wasm_bytes.len());
     
-    // Load the WASM module from memory
-    let module = Module::from_buffer(runtime, wasm_bytes)?;
+    // Step 1: Load the WASM module from memory
+    log::info!("Parsing WASM module binary...");
+    let module = match Module::from_vec(runtime, wasm_bytes.to_vec(), name) {
+        Ok(m) => {
+            log::info!("WASM module parsed successfully");
+            m
+        },
+        Err(e) => {
+            log::error!("Failed to parse WASM module: {:?}", e);
+            return Err(e);
+        }
+    };
     
-    // Create an instance with 64KB of memory
-    let instance = Instance::new(runtime, &module, 1024 * 64)?;
+    // Try with zero additional memory - use only what's in the module
+    log::info!("Creating WASM instance with only built-in memory");
+    let instance = match Instance::new(runtime, &module, 0) {
+        Ok(i) => {
+            log::info!("WASM instance created successfully");
+            i
+        },
+        Err(e) => {
+            log::error!("Failed to create WASM instance: {:?}", e);
+            return Err(e);
+        }
+    };
     
-    // Find the print_message export function
-    if let Ok(function) = Function::find_export_func(&instance, "print_message") {
-        log::info!("Calling print_message function...");
-        let result = function.call(&instance, &[])?;
-        log::info!("print_message returned: {:?}", result);
+    // Step 3: Find and call the single function from our minimal Rust plugin
+    if let Ok(function) = Function::find_export_func(&instance, "say_42") {
+        log::info!("Found 'say_42' function, calling it...");
+        let empty_params: Vec<WasmValue> = vec![];
+        match function.call(&instance, &empty_params) {
+            Ok(results) => {
+                log::info!("Success! say_42() returned: {:?}", results);
+                // The function returns a Vec<WasmValue>
+                if let Some(result) = results.first() {
+                    match result {
+                        WasmValue::I32(val) => log::info!("The answer is: {}", val),
+                        _ => log::info!("Unexpected return type")
+                    }
+                } else {
+                    log::info!("No return value");
+                }
+            },
+            Err(e) => {
+                log::error!("Failed to call 'say_42' function: {:?}", e);
+            }
+        }
     } else {
-        log::warn!("print_message function not found");
+        log::warn!("'say_42' function not found");
     }
     
-    // Find the add export function
-    if let Ok(function) = Function::find_export_func(&instance, "add") {
-        log::info!("Calling add function with params (5, 7)...");
-        let params: Vec<WasmValue> = vec![WasmValue::I32(5), WasmValue::I32(7)];
-        let result = function.call(&instance, &params)?;
-        log::info!("add(5, 7) returned: {:?}", result);
-    } else {
-        log::warn!("add function not found");
-    }
-    
+    log::info!("WASM execution completed successfully");
     Ok(())
 }
 
@@ -64,37 +100,60 @@ fn main() -> Result<(), RuntimeError> {
 
     log::info!("Starting WAMR ESP32 example");
     
-    // Create a WAMR runtime with system allocator and register the log_message function
-    // For Rust plugins, we register without namespace
-    // For AssemblyScript plugins, we need to register with "env" namespace
-    let runtime = Runtime::builder()
-        .use_system_allocator()
-        .register_host_function("log_message", log_message as *mut c_void) // For Rust plugin
-        .register_host_function("env.log_message", log_message as *mut c_void) // For AssemblyScript plugin
-        .build()?;
+    // Configure and create a minimal WAMR runtime
+    log::info!("Creating runtime with fixed memory");
     
-    // Load and run the Rust plugin
-    log::info!("\n\n=== Running Rust Plugin ===");
-    match load_and_run_wasm_plugin(&runtime, "Rust", RUST_PLUGIN) {
-        Ok(_) => log::info!("Rust plugin executed successfully"),
-        Err(e) => log::error!("Failed to run Rust plugin: {:?}", e),
-    }
-    
-    // Load and run the AssemblyScript plugin
-    log::info!("\n\n=== Running AssemblyScript Plugin ===");
-    match load_and_run_wasm_plugin(&runtime, "AssemblyScript", AS_PLUGIN) {
-        Ok(_) => log::info!("AssemblyScript plugin executed successfully"),
-        Err(e) => log::error!("Failed to run AssemblyScript plugin: {:?}", e),
-    }
-    
-    // Load and run the C plugin if available
-    #[cfg(feature = "c_plugin")]
-    {
-        log::info!("\n\n=== Running C Plugin ===");
-        match load_and_run_wasm_plugin(&runtime, "C", C_PLUGIN) {
-            Ok(_) => log::info!("C plugin executed successfully"),
-            Err(e) => log::error!("Failed to run C plugin: {:?}", e),
+    // Configure with fixed memory, no system allocator
+    let runtime = match Runtime::builder()
+        // Don't use system allocator which might be causing the issue
+        // .use_system_allocator()
+        .build() {
+        Ok(r) => {
+            log::info!("Runtime built successfully");
+            r
+        },
+        Err(e) => {
+            log::error!("Failed to build runtime: {:?}", e);
+            return Err(e);
         }
+    };
+    
+    log::info!("WAMR runtime built successfully");
+    
+    // Run the Rust WASM plugin
+    log::info!("\n\n=== Running Rust WASM Plugin ===");
+    
+    // Let's be really explicit about the plugin size for debugging
+    log::info!("Plugin size: {} bytes", RUST_PLUGIN.len());
+    
+    // Try various memory sizes to see what works
+    match load_and_run_wasm_plugin(&runtime, "Rust", RUST_PLUGIN) {
+        Ok(_) => log::info!("Rust WASM plugin executed successfully"),
+        Err(e) => {
+            log::error!("Failed with 0 bytes of additional memory: {:?}", e);
+            
+            // Try again with 128 bytes
+            log::info!("Retrying with 128 bytes of additional memory...");
+            let retry_fn = |rt: &Runtime| -> Result<(), RuntimeError> {
+                log::info!("Loading Rust WASM plugin (retry)");
+                let module = Module::from_vec(rt, RUST_PLUGIN.to_vec(), "Rust-retry")?;
+                let instance = Instance::new(rt, &module, 128)?;
+                
+                if let Ok(function) = Function::find_export_func(&instance, "say_42") {
+                    let empty_params: Vec<WasmValue> = vec![];
+                    let results = function.call(&instance, &empty_params)?;
+                    log::info!("Results: {:?}", results);
+                }
+                
+                Ok(())
+            };
+            
+            if let Err(e2) = retry_fn(&runtime) {
+                log::error!("Retry also failed: {:?}", e2);
+            } else {
+                log::info!("Retry succeeded with 128 bytes of memory!");
+            }
+        },
     }
     
     log::info!("WAMR ESP32 example completed");

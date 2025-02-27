@@ -11,11 +11,15 @@ name = "espidftemplate"
 harness = false # do not use the built in cargo test harness -> resolve rust-analyzer errors
 
 [profile.release]
-opt-level = "s"
+opt-level = "z"           # Optimize for size aggressively
+lto = true                # Enable link-time optimization
+codegen-units = 1         # Use a single codegen unit for better optimization
+panic = "abort"           # Abort on panic for smaller code size
+strip = true              # Strip symbols from binary
 
 [profile.dev]
-debug = true    # Symbols are nice and they don't increase the size on Flash
-opt-level = "z"
+debug = true              # Symbols are nice and they don't increase the size on Flash
+opt-level = "z"           # Optimize for size
 
 [features]
 default = []
@@ -26,7 +30,7 @@ c_plugin = [] # Enable this feature if you've built the C plugin
 [dependencies]
 log = "0.4"
 esp-idf-svc = { version = "0.51", features = ["critical-section", "embassy-time-driver", "embassy-sync"] }
-wamr-rust-sdk = { git = "https://github.com/bytecodealliance/wamr-rust-sdk#f017e9f4599ef9c205eade5dcf98296f582260cd", features = ["esp-idf"] }
+wamr-rust-sdk = { git = "https://github.com/bytecodealliance/wamr-rust-sdk", rev = "f017e9f4599ef9c205eade5dcf98296f582260cd", features = ["esp-idf"] }
 
 [build-dependencies]
 embuild = "0.33"

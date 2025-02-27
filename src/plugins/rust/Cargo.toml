@@ -8,4 +8,7 @@ crate-type = ["cdylib"]
 
 [profile.release]
 lto = true
-opt-level = "s"
+opt-level = "z"  # Optimize for size aggressively
+codegen-units = 1
+panic = "abort"
+strip = true

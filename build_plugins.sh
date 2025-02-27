@@ -6,8 +6,16 @@ mkdir -p resources/plugins
 
 echo "Building Rust plugin..."
 cd src/plugins/rust
-cargo build --target wasm32-unknown-unknown --release
-cp target/wasm32-unknown-unknown/release/rust_plugin.wasm ../../../resources/plugins/
+# Build with aggressive optimization for small size
+RUSTFLAGS="-C opt-level=z -C lto=true -C codegen-units=1 -C panic=abort" cargo build --target wasm32-unknown-unknown --release
+# Optimize WASM size further with wasm-opt if available
+if command -v wasm-opt &> /dev/null; then
+    echo "Optimizing Rust WASM with wasm-opt..."
+    wasm-opt -Oz target/wasm32-unknown-unknown/release/rust_plugin.wasm -o target/wasm32-unknown-unknown/release/rust_plugin.opt.wasm
+    cp target/wasm32-unknown-unknown/release/rust_plugin.opt.wasm ../../../resources/plugins/rust_plugin.wasm
+else
+    cp target/wasm32-unknown-unknown/release/rust_plugin.wasm ../../../resources/plugins/
+fi
 cd ../../..
 
 echo "Building AssemblyScript plugin..."
