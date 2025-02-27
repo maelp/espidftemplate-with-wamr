@@ -79,7 +79,7 @@ fn run_wasm() -> Result<Vec<WasmValue>, RuntimeError> {
     
     // Configure runtime with standard features
     let runtime = Runtime::builder()
-        .run_as_interpreter() // Use interpreter mode for stability
+        .run_as_interpreter() // Use interpreter mode, if I remove it it fails with another error somehow(?) -- ideally we would want to use AOT compiled code
         .use_system_allocator()
         .register_host_function("extra", extra as *mut c_void)
         .build()?;
