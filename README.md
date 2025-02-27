@@ -27,6 +27,10 @@ cd esp-idf && ./install.sh esp32s3
 ### Build, flash and monitor from the host
 
 ```sh
+./build_flash_monitor.sh
+
+# or equivalently
+
 . ~/export-esp.sh
 . ~/esp/esp-idf/export.sh
 cargo run --release # does a build, flash and monitor, see `.cargo/config.toml` for details

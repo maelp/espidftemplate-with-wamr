@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -eou pipefail
 
-if [ ! -e "~/export-esp.sh" ]; then
+if [ ! -e "${HOME}/export-esp.sh" ]; then
     echo "~/export-esp.sh does not exist"
     exit 1
 fi
-if [ ! -e "~/esp/esp-idf/export.sh" ]; then
-    echo "~/esp/esp-idf/export.sh does not exist"
+if [ ! -e "${HOME}/esp/esp-idf/export.sh" ]; then
+    echo "${HOME}/esp/esp-idf/export.sh does not exist"
     exit 1
 fi
 
