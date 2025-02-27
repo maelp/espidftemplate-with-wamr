@@ -33,7 +33,7 @@ fn main() -> Result<(), RuntimeError> {
         }
     }
     
-    info!("WASM execution completed");
+    info!("----- WASM execution completed");
     Ok(())
 }
 
@@ -43,27 +43,27 @@ fn run_wasm_in_thread() -> Result<Vec<WasmValue>, RuntimeError> {
     let (tx, rx) = mpsc::channel();
     
     // Spawn thread for WASM execution
-    info!("Spawning WASM execution thread");
+    info!("----- Spawning WASM execution thread");
     thread::spawn(move || {
-        info!("WASM thread started");
+        info!("----- WASM thread started");
         
         // Execute WASM and send result through channel
         match run_wasm() {
             Ok(result) => {
-                info!("WASM execution successful in thread");
+                info!("----- WASM execution successful in thread");
                 tx.send(Ok(result)).unwrap();
             },
             Err(e) => {
-                error!("WASM execution failed in thread: {:?}", e);
+                error!("----- WASM execution failed in thread: {:?}", e);
                 tx.send(Err(e)).unwrap();
             }
         }
         
-        info!("WASM thread completed");
+        info!("----- WASM thread completed");
     });
     
     // Wait for thread result with timeout
-    info!("Waiting for thread result");
+    info!("----- Waiting for thread result");
     match rx.recv() {
         Ok(result) => result,
         Err(e) => {
@@ -75,7 +75,7 @@ fn run_wasm_in_thread() -> Result<Vec<WasmValue>, RuntimeError> {
 
 // Actually run the WASM module
 fn run_wasm() -> Result<Vec<WasmValue>, RuntimeError> {
-    info!("Configuring WAMR runtime");
+    info!("----- Configuring WAMR runtime");
     
     // Configure runtime with standard features
     let runtime = Runtime::builder()
@@ -84,7 +84,7 @@ fn run_wasm() -> Result<Vec<WasmValue>, RuntimeError> {
         .register_host_function("extra", extra as *mut c_void)
         .build()?;
 
-    info!("WAMR runtime built successfully");
+    info!("----- WAMR runtime built successfully");
 
     log::info!("----- Parsing WASM module!");
     let module = match Module::from_vec(&runtime, RUST_PLUGIN.to_vec(), "rust_plugin") {
@@ -102,17 +102,18 @@ fn run_wasm() -> Result<Vec<WasmValue>, RuntimeError> {
     
     // Print available heap info
     let free_heap = unsafe { sys::esp_get_free_heap_size() };
-    info!("Free heap before WASM instantiation: {} bytes", free_heap);
+    info!("----- Free heap before WASM instantiation: {} bytes", free_heap);
     
     // Increase memory sizes
-    info!("Attempting to create instance");
-    let instance = match Instance::new(
+    info!("----- Attempting to create instance");
+    let instance = match Instance::new_with_args(
         &runtime,
         &module,
-        2 * 1024
+        64 * 1024,
+        64 * 1024
     ) {
         Ok(inst) => {
-            info!("Successfully created instance");
+            info!("----- Successfully created instance");
             inst
         },
         Err(e) => {
@@ -121,7 +122,7 @@ fn run_wasm() -> Result<Vec<WasmValue>, RuntimeError> {
         }
     };
     
-    info!("Successfully instantiated WASM module");
+    info!("----- Successfully instantiated WASM module");
     
     let function = match Function::find_export_func(&instance, "add") {
         Ok(f) => f,
@@ -131,14 +132,14 @@ fn run_wasm() -> Result<Vec<WasmValue>, RuntimeError> {
         }
     };
     
-    info!("Found 'add' function, executing simple test");
+    info!("----- Found 'add' function, executing simple test");
     
     // Create parameters for the function call
     let params: Vec<WasmValue> = vec![WasmValue::I32(5), WasmValue::I32(7)];
-    
+
     match function.call(&instance, &params) {
         Ok(result) => {
-            info!("WASM function result: {:?}", result);
+            info!("----- WASM function result: {:?}", result);
             Ok(result)
         },
         Err(e) => {
