@@ -1,6 +1,13 @@
 # Simple template for esp-rust with wamr for esp32s3
 
-## Prerequisites
+The important settings are in `.cargo/config.toml`:
+
+- the `CARGO_FEATURE_ESP_IDF` and `WAMR_BUILD_TARGET` env vars are set in the `[env]` section
+- the flags for esp32s3 are set in `rustflags`
+
+## Build on your host machine
+
+### Prerequisites (espup and esp-idf)
 
 Install espup (this creates a `~/export-esp.sh`)
 
@@ -17,12 +24,7 @@ git clone -b v5.4 --recursive https://github.com/espressif/esp-idf.git
 cd esp-idf && ./install.sh esp32s3
 ```
 
-## Build, flash and monitor from the host
-
-The important settings are in `.cargo/config.toml`:
-
-- the `CARGO_FEATURE_ESP_IDF` and `WAMR_BUILD_TARGET` env vars are set in the `[env]` section
-- the flags for esp32s3 are set in `rustflags`
+### Build, flash and monitor from the host
 
 ```sh
 . ~/export-esp.sh
