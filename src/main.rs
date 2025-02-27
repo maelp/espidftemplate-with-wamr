@@ -17,7 +17,7 @@ fn main() -> Result<(), RuntimeError> {
     // Initialize ESP-IDF
     sys::link_patches(); // This is crucial for ESP-IDF integration
     EspLogger::initialize_default();
-    
+
     info!("----- Starting WAMR ESP32 example");
 
     info!("Configuring WAMR runtime");
@@ -25,9 +25,9 @@ fn main() -> Result<(), RuntimeError> {
         .use_system_allocator()
         .register_host_function("extra", extra as *mut c_void)
         .build()?;
-    
+
     info!("WAMR runtime built successfully");
-    
+
     log::info!("----- Parsing WASM module!");
     let module = match Module::from_vec(&runtime, RUST_PLUGIN.to_vec(), "rust_plugin") {
         Ok(m) => {
@@ -50,13 +50,13 @@ fn main() -> Result<(), RuntimeError> {
 
     // Try with a small memory size first
     info!("Attempting to create instance with 4kb bytes memory");
-    let instance = match Instance::new(&runtime, &module, 1024 * 4) {
+    let instance = match Instance::new(&runtime, &module, 1024 * 8) {
         Ok(inst) => {
             info!("Successfully created instance with 4kb bytes memory");
             inst
         },
         Err(e) => {
-            error!("Failed to create instance with 512 bytes: {:?}", e);
+            error!("Failed to create instance with 4kb bytes: {:?}", e);
             return Err(e);
         }
     };

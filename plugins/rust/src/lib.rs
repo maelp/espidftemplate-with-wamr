@@ -4,6 +4,6 @@ extern "C" {
 }
 
 #[export_name = "add"]
-pub fn add_ex(m: u32, n: u32) -> u32 {
+pub fn add(m: u32, n: u32) -> u32 {
     m + n + unsafe { extra() }
 }
